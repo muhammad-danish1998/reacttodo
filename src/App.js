@@ -1,57 +1,107 @@
-import logo from './logo.svg';
-import './App.css';
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react'
 
-
-function App() {
-  const [inputVal, setInputVal] = useState("");
-  const [Value, setValue] = useState([]);
-
-  const addData = () => {
-
-    if (!inputVal) {
-      alert("please enter some value")
+const App = () => {
+  // Data from local storage 
+  const DataLocal = () => {
+    const data = localStorage.getItem("list");
+    
+    if (data) {
+      return JSON.parse(localStorage.getItem("list"));
     }
     else {
-      setValue([...Value, inputVal]);
-      setInputVal("")
+      return []
     }
   }
-  const deleteData = (id) =>{
-    const filtered = Value.filter((ele,ind) => {
-      return ind !== id;
+  const [inputVal, setInputVal] = useState('');
+  const [inputArr, setInputArr] = useState(DataLocal());
+  const [toggleBtn, setToggleBtn] = useState(true);
+  const [isEditItem, setIsEditItem] = useState(null);
 
+
+  // For local Storage
+  useEffect(() => {
+    localStorage.setItem("list", JSON.stringify(inputArr));
+  }, [inputArr])
+
+
+  //  add  items  
+  const addItems = () => {
+    if (!inputVal) {
+      alert("please give some Data");
+    }
+    else if(inputVal && !toggleBtn){
+      setInputArr(
+        inputArr.map((val)=>{
+          if(val.id == isEditItem ){
+            return {...val , name:inputVal}
+          }
+          return val;   
+        })     
+      )
+      setToggleBtn(true)
+      setInputVal("")
+      setIsEditItem(null)
+    }
+    else {
+      const allInputdata = { id: new Date().getTime().toString(), name: inputVal }
+    
+      setInputArr([...inputArr, allInputdata]);
+      setInputVal("");
+
+    }
+  }
+  //  delete Item 
+  const DeleteItem = (id) => {
+    const newArr = inputArr.filter((val) => {
+      return id !== val.id
     });
-    setValue(filtered)
+    setInputArr(newArr)
+  }
+  //  deleteAll   
+  const deleteAll = () => {
+    return setInputArr([])
+  }
+  // EditItem
+  const EditItem = (id) => {
+    const newEditItem = inputArr.find((val) => {
+      return val.id === id
+    });
+    setToggleBtn(false)
+    setInputVal(newEditItem.name)
+    setIsEditItem(id)
+
   }
   return (
-    <>
-      <div className="App">
-        <h1>Todo App</h1>
+    <div style={{ textAlign: "center" }}>
+      <div>
+        Todo App <br />
         <input
           type="text"
-          name="todo"
           value={inputVal}
           onChange={(e) => { setInputVal(e.target.value) }}
 
         />
-        <button onClick={addData}>Submit</button>
+        {
+          toggleBtn ? <button onClick={addItems}>Submit</button> : <button onClick={addItems}>Edit Now</button>
+        }
+
       </div>
-      <div className='showData'>
+      <div>
         <ul>
           {
-            Value.map((val, ind) => {
-              return (
-                <>
-                  <li key={ind}>{val}   <button style={{marginLeft:"40px"}} onClick={()=>deleteData(ind)}>Delete</button></li>
-                
-                </>)
+            inputArr.map((val) => {
+             
+              return (<>
+                <li key={val.id}>{val.name} <button onClick={() => DeleteItem(val.id)}>Delete</button><button onClick={() => EditItem(val.id)}>Edit</button></li>
+              </>)
             })
           }
+          <button style={{ textAlign: "center", width: "50%", marginTop: "10px" }} onClick={deleteAll}>Delete all</button>
+
         </ul>
       </div>
-    </>
-  );
+    </div>
+  )
 }
 
-export default App;
+export default App
